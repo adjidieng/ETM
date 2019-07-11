@@ -23,7 +23,7 @@ To learn interpretable topics using ETM with pre-fitted word embeddings (called 
 
 + first fit the word embeddings. For example to use simple skipgram you can run
 ```
-python skipgram.py
+python skipgram.py --data_file PATH_TO_DATA --emb_file PATH_TO_EMBEDDINGS --dim_rho 300 --iters 50 --window_size 4 
 ```
 
 + then run the following 
