@@ -1,6 +1,16 @@
 import torch 
 import numpy as np
 
+def get_topic_diversity(beta, topk):
+    num_topics = beta.shape[0]
+    list_w = np.zeros((num_topics, topk))
+    for k in range(num_topics):
+        idx = beta[k,:].argsort()[-topk:][::-1]
+        list_w[k,:] = idx
+    n_unique = len(np.unique(list_w))
+    TD = n_unique / (topk * num_topics)
+    print('Topic diveristy is: {}'.format(TD))
+
 def get_document_frequency(data, wi, wj=None):
     if wj is None:
         D_wi = 0
@@ -64,7 +74,7 @@ def get_topic_coherence(beta, data, vocab):
     print('Topic coherence is: {}'.format(TC))
 
 def nearest_neighbors(word, embeddings, vocab):
-    vectors = embeddings.cpu().numpy() 
+    vectors = embeddings.data.cpu().numpy() 
     index = vocab.index(word)
     print('vectors: ', vectors.shape)
     query = vectors[index]
