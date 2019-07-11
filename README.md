@@ -6,7 +6,7 @@ ETM defines words and topics in the same embedding space. The likelihood of a wo
 
 ## Dependencies
 
-+ python 3.6
++ python 3.6.7
 + pytorch 1.1.0
 
 ## To Run
