@@ -13,12 +13,12 @@ ETM defines words and topics in the same embedding space. The likelihood of a wo
 
 All the datasets are pre-processed and can be found below:
 
-https://bitbucket.org/franrruiz/data_nyt_largev_4/src/master/
-https://bitbucket.org/franrruiz/data_nyt_largev_5/src/master/
-https://bitbucket.org/franrruiz/data_nyt_largev_6/src/master/
-https://bitbucket.org/franrruiz/data_nyt_largev_7/src/master/
-tps://bitbucket.org/franrruiz/data_stopwords_largev_2/src/master/ (this one contains stop words and was used to showcase robustness of ETM to stop words.)
-https://bitbucket.org/franrruiz/data_20ng_largev/src/master/
++ https://bitbucket.org/franrruiz/data_nyt_largev_4/src/master/
++ https://bitbucket.org/franrruiz/data_nyt_largev_5/src/master/
++ https://bitbucket.org/franrruiz/data_nyt_largev_6/src/master/
++ https://bitbucket.org/franrruiz/data_nyt_largev_7/src/master/
++ https://bitbucket.org/franrruiz/data_stopwords_largev_2/src/master/ (this one contains stop words and was used to showcase robustness of ETM to stop words.)
++ https://bitbucket.org/franrruiz/data_20ng_largev/src/master/
 
 ## To Run
 
