@@ -20,6 +20,8 @@ All the datasets are pre-processed and can be found below:
 + https://bitbucket.org/franrruiz/data_stopwords_largev_2/src/master/ (this one contains stop words and was used to showcase robustness of ETM to stop words.)
 + https://bitbucket.org/franrruiz/data_20ng_largev/src/master/
 
+All the scripts to pre-process a given dataset for ETM can be found in the folder 'scripts'. The script for 20NewsGroup is self-contained as it uses scikit-learn. If you want to run ETM on your own dataset, follow the script for New York Times (given as example) called data_nyt.py  
+
 ## To Run
 
 To learn interpretable embeddings and topics using ETM on the 20NewsGroup dataset, run
