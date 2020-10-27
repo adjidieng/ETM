@@ -201,36 +201,36 @@ def split_bow(bow_in, n_docs):
     return indices, counts
 
 bow_tr_tokens, bow_tr_counts = split_bow(bow_tr, n_docs_tr)
-savemat(path_save + 'bow_tr_tokens', {'tokens': bow_tr_tokens}, do_compression=True)
-savemat(path_save + 'bow_tr_counts', {'counts': bow_tr_counts}, do_compression=True)
+savemat(path_save + 'bow_tr_tokens.mat', {'tokens': bow_tr_tokens}, do_compression=True)
+savemat(path_save + 'bow_tr_counts.mat', {'counts': bow_tr_counts}, do_compression=True)
 del bow_tr
 del bow_tr_tokens
 del bow_tr_counts
 
 bow_ts_tokens, bow_ts_counts = split_bow(bow_ts, n_docs_ts)
-savemat(path_save + 'bow_ts_tokens', {'tokens': bow_ts_tokens}, do_compression=True)
-savemat(path_save + 'bow_ts_counts', {'counts': bow_ts_counts}, do_compression=True)
+savemat(path_save + 'bow_ts_tokens.mat', {'tokens': bow_ts_tokens}, do_compression=True)
+savemat(path_save + 'bow_ts_counts.mat', {'counts': bow_ts_counts}, do_compression=True)
 del bow_ts
 del bow_ts_tokens
 del bow_ts_counts
 
 bow_ts_h1_tokens, bow_ts_h1_counts = split_bow(bow_ts_h1, n_docs_ts_h1)
-savemat(path_save + 'bow_ts_h1_tokens', {'tokens': bow_ts_h1_tokens}, do_compression=True)
-savemat(path_save + 'bow_ts_h1_counts', {'counts': bow_ts_h1_counts}, do_compression=True)
+savemat(path_save + 'bow_ts_h1_tokens.mat', {'tokens': bow_ts_h1_tokens}, do_compression=True)
+savemat(path_save + 'bow_ts_h1_counts.mat', {'counts': bow_ts_h1_counts}, do_compression=True)
 del bow_ts_h1
 del bow_ts_h1_tokens
 del bow_ts_h1_counts
 
 bow_ts_h2_tokens, bow_ts_h2_counts = split_bow(bow_ts_h2, n_docs_ts_h2)
-savemat(path_save + 'bow_ts_h2_tokens', {'tokens': bow_ts_h2_tokens}, do_compression=True)
-savemat(path_save + 'bow_ts_h2_counts', {'counts': bow_ts_h2_counts}, do_compression=True)
+savemat(path_save + 'bow_ts_h2_tokens.mat', {'tokens': bow_ts_h2_tokens}, do_compression=True)
+savemat(path_save + 'bow_ts_h2_counts.mat', {'counts': bow_ts_h2_counts}, do_compression=True)
 del bow_ts_h2
 del bow_ts_h2_tokens
 del bow_ts_h2_counts
 
 bow_va_tokens, bow_va_counts = split_bow(bow_va, n_docs_va)
-savemat(path_save + 'bow_va_tokens', {'tokens': bow_va_tokens}, do_compression=True)
-savemat(path_save + 'bow_va_counts', {'counts': bow_va_counts}, do_compression=True)
+savemat(path_save + 'bow_va_tokens.mat', {'tokens': bow_va_tokens}, do_compression=True)
+savemat(path_save + 'bow_va_counts.mat', {'counts': bow_va_counts}, do_compression=True)
 del bow_va
 del bow_va_tokens
 del bow_va_counts
