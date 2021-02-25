@@ -5,10 +5,14 @@ This is code that accompanies the paper titled "Topic Modeling in Embedding Spac
 ETM defines words and topics in the same embedding space. The likelihood of a word under ETM is a Categorical whose natural parameter is given by the dot product between the word embedding and its assigned topic's embedding. ETM is a document model that learns interpretable topics and word embeddings and is robust to large vocabularies that include rare words and stop words.
 
 ## Dependencies
+The major project dependency are :
 
 + python 3.6.7
 + pytorch 1.1.0
 
+With or without a virtual environment install you can install the other project requirements with: 
+
+`pip install -r requirement.txt`
 ## Datasets
 
 All the datasets are pre-processed and can be found below:
