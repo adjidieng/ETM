@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  etm:
+    build:
+      context: .
+      args:
+        - USER
+        - USER_ID
+        - GROUP_ID
+        - WORKDIR
+    volumes:
+      - ./:/home/hd/git/ETM
