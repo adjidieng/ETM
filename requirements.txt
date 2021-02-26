@@ -1,0 +1,11 @@
+black
+gensim
+ipdb
+isort
+matplotlib
+pyls-black
+pyls-isort
+pyls-mypy
+python-language-server[all]==0.36.2
+scikit-learn
+scipy

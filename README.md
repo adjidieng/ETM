@@ -6,8 +6,19 @@ ETM defines words and topics in the same embedding space. The likelihood of a wo
 
 ## Dependencies
 
-+ python 3.6.7
-+ pytorch 1.1.0
++ python 3.8.7
++ pytorch 1.7.1
+
+## Optional
+
++ docker
++ docker-compose
+
+### Build Docker Image
+
+``` sh
+make build
+```
 
 ## Datasets
 
@@ -20,7 +31,7 @@ All the datasets are pre-processed and can be found below:
 + https://bitbucket.org/franrruiz/data_stopwords_largev_2/src/master/ (this one contains stop words and was used to showcase robustness of ETM to stop words.)
 + https://bitbucket.org/franrruiz/data_20ng_largev/src/master/
 
-All the scripts to pre-process a given dataset for ETM can be found in the folder 'scripts'. The script for 20NewsGroup is self-contained as it uses scikit-learn. If you want to run ETM on your own dataset, follow the script for New York Times (given as example) called data_nyt.py  
+All the scripts to pre-process a given dataset for ETM can be found in the folder 'scripts'. The script for 20NewsGroup is self-contained as it uses scikit-learn. If you want to run ETM on your own dataset, follow the script for New York Times (given as example) called data_nyt.py
 
 ## To Run
 
@@ -38,12 +49,18 @@ To learn interpretable topics using ETM with pre-fitted word embeddings (called 
 
 + first fit the word embeddings. For example to use simple skipgram you can run
 ```
-python skipgram.py --data_file PATH_TO_DATA --emb_file PATH_TO_EMBEDDINGS --dim_rho 300 --iters 50 --window_size 4 
+python skipgram.py --data_file PATH_TO_DATA --emb_file PATH_TO_EMBEDDINGS --dim_rho 300 --iters 50 --window_size 4
 ```
 
-+ then run the following 
++ then run the following
 ```
 python main.py --mode train --dataset 20ng --data_path data/20ng --emb_path PATH_TO_EMBEDDINGS --num_topics 50 --train_embeddings 0 --epochs 1000
+```
+
+## To Run in a Container
+
+``` sh
+docker-compose run --rm etm python main.py --mode train --dataset 20ng --data_path data/20ng --num_topics 50 --train_embeddings 1 --epochs 1000
 ```
 
 ## Citation
@@ -56,4 +73,3 @@ python main.py --mode train --dataset 20ng --data_path data/20ng --emb_path PATH
   year={2019}
 }
 ```
-
