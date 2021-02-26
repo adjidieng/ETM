@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+# docker-compose build ml &> /dev/null
+exec docker-compose run --name etm_python --rm --no-deps -T etm pyls
