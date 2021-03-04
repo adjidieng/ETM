@@ -72,52 +72,27 @@ if torch.cuda.is_available():
 
 ## get data
 # 1. vocabulary
-vocab, train, valid, test = data.get_data(os.path.join(args.data_path))
+vocab, train, valid, test_1, test_2 = data.get_data(os.path.join(args.data_path))
 vocab_size = len(vocab)
 args.vocab_size = vocab_size
 
 # 1. training data
-train_tokens = train['tokens']
-train_counts = train['counts']
-args.num_docs_train = len(train_tokens)
+args.num_docs_train = train.shape[0]
 
 # 2. dev set
-valid_tokens = valid['tokens']
-valid_counts = valid['counts']
-args.num_docs_valid = len(valid_tokens)
+
+args.num_docs_valid = valid.shape[0]
 
 # 3. test data
-test_tokens = test['tokens']
-test_counts = test['counts']
-args.num_docs_test = len(test_tokens)
-test_1_tokens = test['tokens_1']
-test_1_counts = test['counts_1']
-args.num_docs_test_1 = len(test_1_tokens)
-test_2_tokens = test['tokens_2']
-test_2_counts = test['counts_2']
-args.num_docs_test_2 = len(test_2_tokens)
+
+args.num_docs_test = test_1.shape[0] + test_2.shape[0]
+
+args.num_docs_test_1 = test_1.shape[0]
+args.num_docs_test_2 = test_2.shape[0]
 
 embeddings = None
 if not args.train_embeddings:
-    emb_path = args.emb_path
-    vect_path = os.path.join(args.data_path.split('/')[0], 'embeddings.pkl')   
-    vectors = {}
-    with open(emb_path, 'rb') as f:
-        for l in f:
-            line = l.decode().split()
-            word = line[0]
-            if word in vocab:
-                vect = np.array(line[1:]).astype(np.float)
-                vectors[word] = vect
-    embeddings = np.zeros((vocab_size, args.emb_size))
-    words_found = 0
-    for i, word in enumerate(vocab):
-        try: 
-            embeddings[i] = vectors[word]
-            words_found += 1
-        except KeyError:
-            embeddings[i] = np.random.normal(scale=0.6, size=(args.emb_size, ))
-    embeddings = torch.from_numpy(embeddings).to(device)
+    embeddings = data.read_embedding_matrix(vocab, device)
     args.embeddings_dim = embeddings.size()
 
 print('=*'*100)
@@ -163,10 +138,10 @@ def train(epoch):
     cnt = 0
     indices = torch.randperm(args.num_docs_train)
     indices = torch.split(indices, args.batch_size)
-    for idx, ind in enumerate(indices):
+    for idx, indice in enumerate(indices):
         optimizer.zero_grad()
         model.zero_grad()
-        data_batch = data.get_batch(train_tokens, train_counts, ind, args.vocab_size, device)
+        data_batch = data.get_batch(train, indice, device)
         sums = data_batch.sum(1).unsqueeze(1)
         if args.bow_norm:
             normalized_data_batch = data_batch / sums
@@ -206,8 +181,8 @@ def visualize(m, show_emb=True):
 
     m.eval()
 
-    queries = ['andrew', 'computer', 'sports', 'religion', 'man', 'love', 
-                'intelligence', 'money', 'politics', 'health', 'people', 'family']
+    # need to update this .. 
+    queries = ['felix', 'covid', 'pprd', '100jours', 'beni', 'adf', 'muyembe', 'fally']
 
     ## visualize topics using monte carlo
     with torch.no_grad():
@@ -243,12 +218,8 @@ def evaluate(m, source, tc=False, td=False):
     with torch.no_grad():
         if source == 'val':
             indices = torch.split(torch.tensor(range(args.num_docs_valid)), args.eval_batch_size)
-            tokens = valid_tokens
-            counts = valid_counts
         else: 
             indices = torch.split(torch.tensor(range(args.num_docs_test)), args.eval_batch_size)
-            tokens = test_tokens
-            counts = test_counts
 
         ## get \beta here
         beta = m.get_beta()
@@ -257,9 +228,9 @@ def evaluate(m, source, tc=False, td=False):
         acc_loss = 0
         cnt = 0
         indices_1 = torch.split(torch.tensor(range(args.num_docs_test_1)), args.eval_batch_size)
-        for idx, ind in enumerate(indices_1):
+        for idx, indice in enumerate(indices_1):
             ## get theta from first half of docs
-            data_batch_1 = data.get_batch(test_1_tokens, test_1_counts, ind, args.vocab_size, device)
+            data_batch_1 = data.get_batch(test_1, indice, device)
             sums_1 = data_batch_1.sum(1).unsqueeze(1)
             if args.bow_norm:
                 normalized_data_batch_1 = data_batch_1 / sums_1
@@ -268,7 +239,7 @@ def evaluate(m, source, tc=False, td=False):
             theta, _ = m.get_theta(normalized_data_batch_1)
 
             ## get prediction loss using second half
-            data_batch_2 = data.get_batch(test_2_tokens, test_2_counts, ind, args.vocab_size, device)
+            data_batch_2 = data.get_batch(test_2, indice, device)
             sums_2 = data_batch_2.sum(1).unsqueeze(1)
             res = torch.mm(theta, beta)
             preds = torch.log(res)
@@ -287,7 +258,7 @@ def evaluate(m, source, tc=False, td=False):
             beta = beta.data.cpu().numpy()
             if tc:
                 print('Computing topic coherence...')
-                get_topic_coherence(beta, train_tokens, vocab)
+                get_topic_coherence(beta, train, vocab)
             if td:
                 print('Computing topic diversity...')
                 get_topic_diversity(beta, 25)
@@ -338,8 +309,8 @@ else:
         thetaAvg = torch.zeros(1, args.num_topics).to(device)
         thetaWeightedAvg = torch.zeros(1, args.num_topics).to(device)
         cnt = 0
-        for idx, ind in enumerate(indices):
-            data_batch = data.get_batch(train_tokens, train_counts, ind, args.vocab_size, device)
+        for idx, indice in enumerate(indices):
+            data_batch = data.get_batch(train, indice, device)
             sums = data_batch.sum(1).unsqueeze(1)
             cnt += sums.sum(0).squeeze().cpu().numpy()
             if args.bow_norm:
@@ -371,8 +342,7 @@ else:
                 rho_etm = model.rho.weight.cpu()
             except:
                 rho_etm = model.rho.cpu()
-            queries = ['andrew', 'woman', 'computer', 'sports', 'religion', 'man', 'love', 
-                            'intelligence', 'money', 'politics', 'health', 'people', 'family']
+            queries = ['felix', 'covid', 'pprd', '100jours', 'beni', 'adf', 'muyembe', 'fally']
             print('\n')
             print('ETM embeddings...')
             for word in queries:
