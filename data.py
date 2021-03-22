@@ -7,6 +7,7 @@ from scipy.io import loadmat
 from pathlib import Path
 from sklearn.model_selection import train_test_split
 from gensim.models.fasttext import FastText as FT_gensim
+from tqdm import tqdm
 
 def read_mat_file(key, path):
     """
@@ -69,25 +70,41 @@ def get_batch(doc_terms_matrix, indices, device):
         [numpy arayy ]: a numpy array with the data passed as parameter
     """
     data_batch = doc_terms_matrix[indices, :]
-    data_batch = torch.from_numpy(data_batch).float().to(device)
+    data_batch = torch.from_numpy(data_batch.toarray()).float().to(device)
     return data_batch
 
 
-def read_embedding_matrix(vocab, device):
+def read_embedding_matrix(vocab, device,  load_trainned=True):
     """
     read the embedding  matrix passed as parameter and return it as an vocabulary of each word 
     with the corresponding embeddings
 
     Args:
         path ([type]): [description]
+
+    # we need to use tensorflow embedding lookup heer
     """
     model_path = Path.home().joinpath("Projects", 
                                     "Personal", 
                                     "balobi_nini", 
                                     'models', 
                                     'embeddings_one_gram_fast_tweets_only').__str__()
-    model_gensim = FT_gensim.load(model_path)
-    vectorized_get_embeddings = np.vectorize(lambda x : model_gensim.wv.get_vector(x))
-    embeddings_matrix = vectorized_get_embeddings(vocab.ravel())
+    embeddings_path = Path().cwd().joinpath('data', 'preprocess', "embedding_matrix.npy")
+
+    if load_trainned:
+        embeddings_matrix = np.load(embeddings_path, allow_pickle=True)
+    else:
+        model_gensim = FT_gensim.load(model_path)
+        vectorized_get_embeddings = np.vectorize(model_gensim.wv.get_vector)
+        embeddings_matrix = np.zeros(shape=(len(vocab),50)) #should put the embeding size as a vector
+        print("starting getting the word embeddings ++++ ")
+        vocab = vocab.ravel()
+        for index, word in tqdm(enumerate(vocab)):
+            vector = model_gensim.wv.get_vector(word)
+            embeddings_matrix[index] = vector
+        print("done getting the word embeddings ")
+        with open(embeddings_path, 'wb') as file_path:
+            np.save(file_path, embeddings_matrix)
+
     embeddings = torch.from_numpy(embeddings_matrix).to(device)
     return embeddings

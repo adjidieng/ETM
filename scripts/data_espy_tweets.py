@@ -22,7 +22,8 @@ with open(data_file, 'r') as f:
 print('counting document frequency of words...')
 vectorizer = TfidfVectorizer(lowercase=True, 
                              strip_accents="unicode", 
-                             ngram_range = (1, 2)) 
+                             ngram_range = (1, 2),
+                             max_features=200000) 
 doc_terms_matrix = vectorizer.fit_transform(docs)
 terms = vectorizer.get_feature_names()
 
@@ -39,7 +40,7 @@ print('creating bow representation...')
 
 
 # Save vocabulary to file
-path_save = Path.cwd().joinpath('min_df_', str(min_df))
+path_save = Path.cwd().joinpath('data', 'preprocess')
 Path(path_save).mkdir(exist_ok=True, parents=True)
 
 with open(path_save.joinpath('vocab.pkl'), 'wb') as f:
@@ -52,7 +53,7 @@ print('splitting bow intro token/value pairs and saving to disk...')
 savemat(path_save.joinpath('tf_idf_doc_terms_matrix'), {"doc_terms_matrix": doc_terms_matrix}, do_compression=True)
 savemat(path_save.joinpath('tf_idf_terms'), {"terms" : terms}, do_compression=True)
 
-
+print('**' * 10 , doc_terms_matrix.shape)
 
 print('Data ready !!')
 print('*************')

@@ -16,6 +16,10 @@ import scipy.io
 
 from torch import nn, optim
 from torch.nn import functional as F
+from pathlib import Path
+from gensim.models.fasttext import FastText as FT_gensim
+import tracemalloc
+
 
 from etm import ETM
 from utils import nearest_neighbors, get_topic_coherence, get_topic_diversity
@@ -72,12 +76,12 @@ if torch.cuda.is_available():
 
 ## get data
 # 1. vocabulary
-vocab, train, valid, test_1, test_2 = data.get_data(os.path.join(args.data_path))
+vocab, training_set, valid, test_1, test_2 = data.get_data(os.path.join(args.data_path))
 vocab_size = len(vocab)
 args.vocab_size = vocab_size
 
 # 1. training data
-args.num_docs_train = train.shape[0]
+args.num_docs_train = training_set.shape[0]
 
 # 2. dev set
 
@@ -106,176 +110,41 @@ if not os.path.exists(args.save_path):
 if args.mode == 'eval':
     ckpt = args.load_from
 else:
-    ckpt = os.path.join(args.save_path, 
+    ckpt = Path.cwd().joinpath(args.save_path, 
         'etm_{}_K_{}_Htheta_{}_Optim_{}_Clip_{}_ThetaAct_{}_Lr_{}_Bsz_{}_RhoSize_{}_trainEmbeddings_{}'.format(
         args.dataset, args.num_topics, args.t_hidden_size, args.optimizer, args.clip, args.theta_act, 
             args.lr, args.batch_size, args.rho_size, args.train_embeddings))
 
 ## define model and optimizer
-model = ETM(args.num_topics, vocab_size, args.t_hidden_size, args.rho_size, args.emb_size, 
-                args.theta_act, embeddings, args.train_embeddings, args.enc_drop).to(device)
+model = ETM(args.num_topics, 
+            vocab_size, 
+            args.t_hidden_size, 
+            args.rho_size, 
+            args.emb_size, 
+            args.theta_act, 
+            embeddings, 
+            args.train_embeddings, 
+            args.enc_drop).to(device)
 
 print('model: {}'.format(model))
 
-if args.optimizer == 'adam':
-    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wdecay)
-elif args.optimizer == 'adagrad':
-    optimizer = optim.Adagrad(model.parameters(), lr=args.lr, weight_decay=args.wdecay)
-elif args.optimizer == 'adadelta':
-    optimizer = optim.Adadelta(model.parameters(), lr=args.lr, weight_decay=args.wdecay)
-elif args.optimizer == 'rmsprop':
-    optimizer = optim.RMSprop(model.parameters(), lr=args.lr, weight_decay=args.wdecay)
-elif args.optimizer == 'asgd':
-    optimizer = optim.ASGD(model.parameters(), lr=args.lr, t0=0, lambd=0., weight_decay=args.wdecay)
-else:
-    print('Defaulting to vanilla SGD')
-    optimizer = optim.SGD(model.parameters(), lr=args.lr)
+optimizer = model.get_optimizer(args)
 
-def train(epoch):
-    model.train()
-    acc_loss = 0
-    acc_kl_theta_loss = 0
-    cnt = 0
-    indices = torch.randperm(args.num_docs_train)
-    indices = torch.split(indices, args.batch_size)
-    for idx, indice in enumerate(indices):
-        optimizer.zero_grad()
-        model.zero_grad()
-        data_batch = data.get_batch(train, indice, device)
-        sums = data_batch.sum(1).unsqueeze(1)
-        if args.bow_norm:
-            normalized_data_batch = data_batch / sums
-        else:
-            normalized_data_batch = data_batch
-        recon_loss, kld_theta = model(data_batch, normalized_data_batch)
-        total_loss = recon_loss + kld_theta
-        total_loss.backward()
 
-        if args.clip > 0:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
-        optimizer.step()
-
-        acc_loss += torch.sum(recon_loss).item()
-        acc_kl_theta_loss += torch.sum(kld_theta).item()
-        cnt += 1
-
-        if idx % args.log_interval == 0 and idx > 0:
-            cur_loss = round(acc_loss / cnt, 2) 
-            cur_kl_theta = round(acc_kl_theta_loss / cnt, 2) 
-            cur_real_loss = round(cur_loss + cur_kl_theta, 2)
-
-            print('Epoch: {} .. batch: {}/{} .. LR: {} .. KL_theta: {} .. Rec_loss: {} .. NELBO: {}'.format(
-                epoch, idx, len(indices), optimizer.param_groups[0]['lr'], cur_kl_theta, cur_loss, cur_real_loss))
-    
-    cur_loss = round(acc_loss / cnt, 2) 
-    cur_kl_theta = round(acc_kl_theta_loss / cnt, 2) 
-    cur_real_loss = round(cur_loss + cur_kl_theta, 2)
-    print('*'*100)
-    print('Epoch----->{} .. LR: {} .. KL_theta: {} .. Rec_loss: {} .. NELBO: {}'.format(
-            epoch, optimizer.param_groups[0]['lr'], cur_kl_theta, cur_loss, cur_real_loss))
-    print('*'*100)
-
-def visualize(m, show_emb=True):
-    if not os.path.exists('./results'):
-        os.makedirs('./results')
-
-    m.eval()
-
-    # need to update this .. 
-    queries = ['felix', 'covid', 'pprd', '100jours', 'beni', 'adf', 'muyembe', 'fally']
-
-    ## visualize topics using monte carlo
-    with torch.no_grad():
-        print('#'*100)
-        print('Visualize topics...')
-        topics_words = []
-        gammas = m.get_beta()
-        for k in range(args.num_topics):
-            gamma = gammas[k]
-            top_words = list(gamma.cpu().numpy().argsort()[-args.num_words+1:][::-1])
-            topic_words = [vocab[a] for a in top_words]
-            topics_words.append(' '.join(topic_words))
-            print('Topic {}: {}'.format(k, topic_words))
-
-        if show_emb:
-            ## visualize word embeddings by using V to get nearest neighbors
-            print('#'*100)
-            print('Visualize word embeddings by using output embedding matrix')
-            try:
-                embeddings = m.rho.weight  # Vocab_size x E
-            except:
-                embeddings = m.rho         # Vocab_size x E
-            neighbors = []
-            for word in queries:
-                print('word: {} .. neighbors: {}'.format(
-                    word, nearest_neighbors(word, embeddings, vocab)))
-            print('#'*100)
-
-def evaluate(m, source, tc=False, td=False):
-    """Compute perplexity on document completion.
-    """
-    m.eval()
-    with torch.no_grad():
-        if source == 'val':
-            indices = torch.split(torch.tensor(range(args.num_docs_valid)), args.eval_batch_size)
-        else: 
-            indices = torch.split(torch.tensor(range(args.num_docs_test)), args.eval_batch_size)
-
-        ## get \beta here
-        beta = m.get_beta()
-
-        ### do dc and tc here
-        acc_loss = 0
-        cnt = 0
-        indices_1 = torch.split(torch.tensor(range(args.num_docs_test_1)), args.eval_batch_size)
-        for idx, indice in enumerate(indices_1):
-            ## get theta from first half of docs
-            data_batch_1 = data.get_batch(test_1, indice, device)
-            sums_1 = data_batch_1.sum(1).unsqueeze(1)
-            if args.bow_norm:
-                normalized_data_batch_1 = data_batch_1 / sums_1
-            else:
-                normalized_data_batch_1 = data_batch_1
-            theta, _ = m.get_theta(normalized_data_batch_1)
-
-            ## get prediction loss using second half
-            data_batch_2 = data.get_batch(test_2, indice, device)
-            sums_2 = data_batch_2.sum(1).unsqueeze(1)
-            res = torch.mm(theta, beta)
-            preds = torch.log(res)
-            recon_loss = -(preds * data_batch_2).sum(1)
-            
-            loss = recon_loss / sums_2.squeeze()
-            loss = loss.mean().item()
-            acc_loss += loss
-            cnt += 1
-        cur_loss = acc_loss / cnt
-        ppl_dc = round(math.exp(cur_loss), 1)
-        print('*'*100)
-        print('{} Doc Completion PPL: {}'.format(source.upper(), ppl_dc))
-        print('*'*100)
-        if tc or td:
-            beta = beta.data.cpu().numpy()
-            if tc:
-                print('Computing topic coherence...')
-                get_topic_coherence(beta, train, vocab)
-            if td:
-                print('Computing topic diversity...')
-                get_topic_diversity(beta, 25)
-        return ppl_dc
-
+tracemalloc.start()
 if args.mode == 'train':
     ## train model on data 
     best_epoch = 0
     best_val_ppl = 1e9
     all_val_ppls = []
     print('\n')
-    print('Visualizing model quality before training...')
-    visualize(model)
+    print('Visualizing model quality before training...', args.epochs)
+    #model.visualize(args, vocabulary = vocab)
     print('\n')
-    for epoch in range(1, args.epochs):
-        train(epoch)
-        val_ppl = evaluate(model, 'val')
+    for epoch in range(0, args.epochs):
+        print("I am training for epoch", epoch)
+        model.train_for_epoch(epoch, args, training_set)
+        val_ppl = model.evaluate(args, 'val', training_set, vocab,  test_1, test_2)
         if val_ppl < best_val_ppl:
             with open(ckpt, 'wb') as f:
                 torch.save(model, f)
@@ -287,12 +156,12 @@ if args.mode == 'train':
             if args.anneal_lr and (len(all_val_ppls) > args.nonmono and val_ppl > min(all_val_ppls[:-args.nonmono]) and lr > 1e-5):
                 optimizer.param_groups[0]['lr'] /= args.lr_factor
         if epoch % args.visualize_every == 0:
-            visualize(model)
+            model.visualize(args, vocabulary = vocab)
         all_val_ppls.append(val_ppl)
     with open(ckpt, 'rb') as f:
         model = torch.load(f)
     model = model.to(device)
-    val_ppl = evaluate(model, 'val')
+    val_ppl = model.evaluate(args, 'val')
 else:   
     with open(ckpt, 'rb') as f:
         model = torch.load(f)
@@ -301,16 +170,15 @@ else:
 
     with torch.no_grad():
         ## get document completion perplexities
-        test_ppl = evaluate(model, 'test', tc=args.tc, td=args.td)
-
+        test_ppl = model.evaluate(args, 'val', training_set, vocab,  test_1, test_2)
         ## get most used topics
         indices = torch.tensor(range(args.num_docs_train))
         indices = torch.split(indices, args.batch_size)
         thetaAvg = torch.zeros(1, args.num_topics).to(device)
-        thetaWeightedAvg = torch.zeros(1, args.num_topics).to(device)
+        theta_weighted_average = torch.zeros(1, args.num_topics).to(device)
         cnt = 0
         for idx, indice in enumerate(indices):
-            data_batch = data.get_batch(train, indice, device)
+            data_batch = data.get_batch(training_set, indice, device)
             sums = data_batch.sum(1).unsqueeze(1)
             cnt += sums.sum(0).squeeze().cpu().numpy()
             if args.bow_norm:
@@ -320,11 +188,11 @@ else:
             theta, _ = model.get_theta(normalized_data_batch)
             thetaAvg += theta.sum(0).unsqueeze(0) / args.num_docs_train
             weighed_theta = sums * theta
-            thetaWeightedAvg += weighed_theta.sum(0).unsqueeze(0)
+            theta_weighted_average += weighed_theta.sum(0).unsqueeze(0)
             if idx % 100 == 0 and idx > 0:
                 print('batch: {}/{}'.format(idx, len(indices)))
-        thetaWeightedAvg = thetaWeightedAvg.squeeze().cpu().numpy() / cnt
-        print('\nThe 10 most used topics are {}'.format(thetaWeightedAvg.argsort()[::-1][:10]))
+        theta_weighted_average = theta_weighted_average.squeeze().cpu().numpy() / cnt
+        print('\nThe 10 most used topics are {}'.format(theta_weighted_average.argsort()[::-1][:10]))
 
         ## show topics
         beta = model.get_beta()
@@ -348,3 +216,7 @@ else:
             for word in queries:
                 print('word: {} .. etm neighbors: {}'.format(word, nearest_neighbors(word, rho_etm, vocab)))
             print('\n')
+
+current, peak = tracemalloc.get_traced_memory()
+print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
+tracemalloc.stop()
