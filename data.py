@@ -39,7 +39,7 @@ def split_train_test_matrix(dataset):
     X_train, X_val = train_test_split(X_train, test_size=0.25, random_state=1) # 0.25 x 0.8 = 0.2
     return X_train, X_val, X_test_1, X_test_2
 
-def get_data(path):
+def get_data(doc_terms_file_name="tf_idf_doc_terms_matrix", terms_filename="tf_idf_terms"):
     """read the data and return the vocabulary as well as the train, test and validation tests
 
     Args:
@@ -48,8 +48,8 @@ def get_data(path):
     Returns:
         [type]: [description]
     """
-    doc_term_matrix = read_mat_file("doc_terms_matrix", "tf_idf_doc_terms_matrix")
-    terms = read_mat_file("terms", "tf_idf_terms")
+    doc_term_matrix = read_mat_file("doc_terms_matrix", doc_terms_file_name)
+    terms = read_mat_file("terms", terms_filename)
     vocab = terms
     train, validation, test_1, test_2 = split_train_test_matrix(doc_term_matrix)
 

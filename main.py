@@ -76,7 +76,8 @@ if torch.cuda.is_available():
 
 ## get data
 # 1. vocabulary
-vocab, training_set, valid, test_1, test_2 = data.get_data(os.path.join(args.data_path))
+vocab, training_set, valid, test_1, test_2 = data.get_data(doc_terms_file_name="tf_idf_doc_terms_matrix_time_window_1",
+                                                           terms_filename="tf_idf_terms_time_window_1")
 vocab_size = len(vocab)
 args.vocab_size = vocab_size
 
@@ -96,7 +97,7 @@ args.num_docs_test_2 = test_2.shape[0]
 
 embeddings = None
 if not args.train_embeddings:
-    embeddings = data.read_embedding_matrix(vocab, device)
+    embeddings = data.read_embedding_matrix(vocab, device, load_trainned=True)
     args.embeddings_dim = embeddings.size()
 
 print('=*'*100)
@@ -145,6 +146,7 @@ if args.mode == 'train':
         print("I am training for epoch", epoch)
         model.train_for_epoch(epoch, args, training_set)
         val_ppl = model.evaluate(args, 'val', training_set, vocab,  test_1, test_2)
+        print("The validation scores", val_ppl)
         if val_ppl < best_val_ppl:
             with open(ckpt, 'wb') as f:
                 torch.save(model, f)
@@ -161,7 +163,7 @@ if args.mode == 'train':
     with open(ckpt, 'rb') as f:
         model = torch.load(f)
     model = model.to(device)
-    val_ppl = model.evaluate(args, 'val')
+    val_ppl = model.evaluate(args, 'val', training_set, vocab,  test_1, test_2)
 else:   
     with open(ckpt, 'rb') as f:
         model = torch.load(f)

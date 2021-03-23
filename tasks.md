@@ -1,0 +1,3 @@
+- Train the model for a slow amount of data 
+- Leverage the compute storage to see how fast the model will train on an architecture with GPUS
+- Read all the data for the past year
