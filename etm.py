@@ -236,6 +236,8 @@ class ETM(nn.Module):
         queries = ['felix', 'covid', 'pprd', '100jours', 'beni', 'adf', 'muyembe', 'fally']
 
         ## visualize topics using monte carlo
+        results_file_name = "topic_results_{}_{}.txt".format(args.batch_size, args.epochs)
+        results_file_name = Path.cwd().joinpath("results", results_file_name)
         with torch.no_grad():
             print('#'*100)
             print('Visualize topics...')
@@ -244,9 +246,12 @@ class ETM(nn.Module):
             for k in range(args.num_topics):
                 gamma = gammas[k]
                 top_words = list(gamma.cpu().numpy().argsort()[-args.num_words+1:][::-1])
-                topic_words = [vocabulary[a] for a in top_words]
+                topic_words = [vocabulary[a].strip() for a in top_words]
                 topics_words.append(' '.join(topic_words))
-                print('Topic {}: {}'.format(k, topic_words))
+                with open(results_file_name, "a") as results_file:
+	                results_file.write('Topic {}: {}\n'.format(k, topic_words))
+            with open(results_file_name, "a") as results_file:
+	            results_file.write(10*'#'+'\n') # But this could have been done as a function
 
             if show_emb:
                 ## visualize word embeddings by using V to get nearest neighbors

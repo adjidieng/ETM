@@ -4,4 +4,4 @@ mode
 emb_size = 50
 bow_norm False
 
-python main.py --mode train --dataset preprocess --data_path data/preprocess --num_topics 50 --train_embeddings 0 --epochs 2  --rho_size 50 --batch_siz 100
+python main.py --mode train --dataset preprocess --data_path data/preprocess --num_topics 50 --train_embeddings 0 --epochs 2  --rho_size 50 --batch_size 100

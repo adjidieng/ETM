@@ -15,13 +15,9 @@ min_df = 100  # choose desired value for min_df
 
 # Read data
 print('reading text file...')
-data = pd.read_csv('../balobi_nini/data/cleanned_tweets_2021.csv', index_col='id', parse_dates=['created_at'])[['created_at', 'cleanned_text']]
-"""data_file = '../balobi_nini/data/cleanned_tweets_2021_text_only.txt'
+data_file = '../balobi_nini/data/cleanned_tweets_2021_text_only.txt'
 with open(data_file, 'r') as f:
-    docs = f.readlines()"""
-windows_groups = data.groupby(pd.Grouper(key="created_at", freq="1W"))
-windows_data = [df for time, df in windows_groups if not df.empty]
-
+    docs = f.readlines()
 
 # Create count vectorizer
 print('counting document frequency of words...')
@@ -29,8 +25,7 @@ vectorizer = TfidfVectorizer(lowercase=True,
                              strip_accents="unicode", 
                              ngram_range = (1, 2),
                              max_features=200000) 
-# doc_terms_matrix = vectorizer.fit_transform(docs)
-doc_terms_matrix = vectorizer.fit_transform(windows_data[0].cleanned_text.dropna())
+doc_terms_matrix = vectorizer.fit_transform(docs)
 terms = vectorizer.get_feature_names()
 
 # Get vocabulary

@@ -97,7 +97,7 @@ args.num_docs_test_2 = test_2.shape[0]
 
 embeddings = None
 if not args.train_embeddings:
-    embeddings = data.read_embedding_matrix(vocab, device, load_trainned=True)
+    embeddings = data.read_embedding_matrix(vocab, device, load_trainned=False)
     args.embeddings_dim = embeddings.size()
 
 print('=*'*100)
