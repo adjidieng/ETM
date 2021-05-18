@@ -25,8 +25,9 @@ class MySentences(object):
         self.filename = filename
  
     def __iter__(self):
-        for line in open(self.filename):
-            yield line.split()
+        with open(self.filename) as infile:
+            for line in infile:
+                yield line.split()
 
 # Gensim code to obtain the embeddings
 sentences = MySentences(args.data_file) # a memory-friendly iterator
