@@ -1,0 +1,4 @@
+- Train the model for a small  amount of data 
+- Leverage the compute storage to see how fast the model will train on an architecture with GPUS
+- Read all the data for the past year
+- [x] Install gpu driver on the compute
