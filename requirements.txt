@@ -15,5 +15,5 @@ six==1.15.0
 sklearn==0.0
 smart-open==4.2.0
 threadpoolctl==2.1.0
-torch==1.2.0
+torch==1.13.1
 torchvision==0.4.0
